@@ -1,4 +1,4 @@
-# formulario3.py
+# Proyecto integrador
 Formulario de datos personales de un alumno hecho con Python y las herramientas de Flet
 
 <img width="613" height="484" alt="image" src="https://github.com/user-attachments/assets/5e51dc20-9370-476b-9ba0-651369be3750" />
@@ -206,9 +206,146 @@ Column/Row
 Estructuras para maquetar la interfaz.
 
 
+Validación de espacios vasios
+1. La obtención del Valor (.value)
+Cada control que creaste (como txt_nombre o dd_carrera) es un objeto. Cuando el usuario interactúa con ellos, Flet almacena lo que se escribe o selecciona en la propiedad .value.
+
+Al presionar el botón "Enviar", lo primero que hace tu función es capturar esos estados actuales:
+
+Python
+nombre = txt_nombre.value  # Esto obtiene el string actual del campo
+carrera = dd_carrera.value # Esto obtiene la opción seleccionada o None
+2. El uso de la lógica "Truthy/Falsy" de Python
+Flet aprovecha que en Python, los strings vacíos ("") y los valores nulos (None) se evalúan como False en un contexto booleano.
+
+La validación que usas en tu código funciona así:
+
+Python
+if not nombre:
+    # Si 'nombre' está vacío (""), 'not nombre' es True.
+    mostrar_mensaje("Error...", "red")
+    return # Detiene la ejecución para que no se guarden datos vacíos
+3. Diferencias según el tipo de Control
+Flet maneja el "vacío" de formas ligeramente distintas dependiendo del control:
+
+TextField (Nombre, Email): Si el usuario no escribe nada, .value devuelve una cadena vacía ("").
+
+Dropdown (Carrera, Semestre): Si el usuario no ha desplegado y elegido una opción, .value suele ser None o una cadena vacía. Por eso usas if not carrera:.
+
+RadioGroup (Género): Si no se marca ninguna opción, el valor es None.
+
+4. Limpieza de espacios en blanco (Trim)
+Un error común en formularios es que el usuario presione la barra espaciadora y deje espacios. Tu código maneja esto de forma inteligente en el nombre:
+
+Python
+if not nombre or not nombre.replace(" ", "").isalpha():
+Aquí, replace(" ", "") elimina temporalmente los espacios para verificar si realmente hay contenido o si solo son caracteres invisibles.
+
+
+Validación de correos electrónicos
+1. Extracción del valor
+Flet toma el contenido del control txt_email a través de su propiedad .value. Esta propiedad siempre devuelve un String.
+
+Si el campo está vacío, devuelve "".
+
+Si el usuario escribió algo, devuelve el texto exacto.
+
+2. Triple comprobación lógica
+El condicional if utiliza tres reglas conectadas por el operador or (que significa que si cualquiera de estas se cumple, el correo se considera inválido):
+
+not email: Verifica si el campo está vacío. Si no hay texto, la validación falla.
+
+"@" not in email: Busca el símbolo de la arroba. Es el requisito mínimo de cualquier correo electrónico. Si el usuario escribe "usuario.com", esta regla lo detecta como error.
+
+"." not in email: Busca la existencia de un punto (que representaría el dominio como .com, .org, etc.).
+
+3. Retroalimentación visual
+Si la validación falla, se ejecutan dos acciones de Flet:
+
+Bloqueo: El return detiene la función, impidiendo que el código llegue a la parte de "Datos guardados".
+
+Notificación: Se llama a la función mostrar_mensaje, que abre el ft.SnackBar en la parte inferior de la pantalla.
+
+Una forma más avanzada: Expresiones Regulares (Regex)
+La validación actual es básica (deja pasar cosas como @.). En proyectos más profesionales de Flet, solemos usar el módulo re de Python para una validación exhaustiva.
+
+Aquí te muestro cómo se vería esa herramienta integrada en tu código:
+
+Python
+import re
+
+def validar_email_pro(email):
+    # Expresión regular para un formato de email estándar
+    patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(patron, email)
+
+# Dentro de enviar_datos:
+if not validar_email_pro(txt_email.value):
+    mostrar_mensaje("Formato de correo no permitido", "red")
+    return
 
 
 
+1. Anatomía de un Dropdown en Flet
+Un Dropdown se compone de dos partes fundamentales:
+
+El contenedor (ft.Dropdown): Define el diseño, la etiqueta y guarda el valor seleccionado.
+
+Las opciones (ft.dropdown.Option): Son los elementos individuales dentro del menú.
+
+2. Implementación en tu código
+En tu script, utilizaste dos Dropdowns con enfoques ligeramente distintos para las opciones:
+
+A. Definición Manual (Carrera)
+Para el campo de carrera, escribiste cada opción una por una. Esto es útil cuando las opciones son pocas y estáticas.
+
+Python
+dd_carrera = ft.Dropdown(
+    label="Carrera",
+    expand=True,
+    options=[
+        ft.dropdown.Option("Ingeniería en Sistemas"),
+        ft.dropdown.Option("Ingeniería Civil"),
+        ft.dropdown.Option("Ingeniería Industrial"),
+    ]
+)
+B. Generación Dinámica (Semestre)
+Para el semestre, utilizaste una comprensión de listas de Python. Esto es mucho más eficiente que escribir 6 líneas de código idénticas.
+
+Python
+options=[ft.dropdown.Option(str(i)) for i in range(1, 7)]
+range(1, 7) genera números del 1 al 6.
+
+str(i) convierte el número en texto (Flet requiere que el valor de la opción sea un String).
+
+Se crea un objeto ft.dropdown.Option para cada número automáticamente.
+
+3. Propiedades clave que utilizaste
+label: Es el texto flotante que indica al usuario qué debe seleccionar.
+
+expand=True: Como el Dropdown está dentro de una ft.Row (Fila), esta propiedad hace que el control se estire para ocupar todo el espacio disponible, permitiendo que "Carrera" y "Semestre" compartan la fila proporcionalmente.
+
+border_color: Define el color del borde para que coincida con la estética de tu app (#4D2A32).
+
+4. Cómo se captura la selección
+Cuando el usuario hace clic en una opción, el texto de esa opción se almacena en la propiedad .value del objeto Dropdown.
+
+En tu función de validación lo extraes así:
+
+Python
+carrera = dd_carrera.value # Si eligió Sistemas, carrera vale "Ingeniería en Sistemas"
+
+if not carrera:
+    # Si el valor es None (no eligió nada), lanza el error
+    mostrar_mensaje("Seleccione una carrera.", "red")
+5. El flujo de renderizado
+Cuando Flet dibuja el Dropdown:
+
+Crea el campo visual con el borde y la etiqueta.
+
+Prepara una "ventana emergente" (popover) que contiene las Options.
+
+Al seleccionar una, Flet actualiza internamente el estado del control y cierra el menú.
 
 
 
